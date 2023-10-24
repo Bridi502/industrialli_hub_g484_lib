@@ -101,7 +101,7 @@ void industrialli_digitalInputs::readDigitalInputsStatus()
 bool industrialli_digitalInputs::readDigitalInput(uint8_t pin)
 {
   _pin = pin - 1;
-  switch (pin)
+  switch (_pin)
   {
   case 0:
     readDigitalInputsStatus();

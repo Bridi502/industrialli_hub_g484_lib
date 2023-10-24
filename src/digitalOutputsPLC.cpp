@@ -261,10 +261,10 @@ void industrialli_digitalOutputs::testOutputs()
 {
     for(int i = 0; i < 17; i++){
         writeDigitalOutput(i, HIGH);
-        delay(500);
+        delay(100);
     }
     for(int i = 16; i > 0; i --){
         writeDigitalOutput(i, LOW);
-        delay(500);
+        delay(100);
     }
 }
