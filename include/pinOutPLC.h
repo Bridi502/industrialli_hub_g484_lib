@@ -74,15 +74,16 @@
 #define SPI1_W5500_CS PA4
 #define GPIO_W5500_INT PA10
 #define GPIO_W5500_RST PC7
+#define SPI1_MISO PA6
+#define SPI1_MOSI PA7
+#define SPI1_SCK PA5
 
 
-/*
+
 // SPI3 - PinOut
 #define SPI3_SCK PC10
 #define SPI3_MISO PC11
 #define SPI3_MOSI PC12
-
-*/
 
 
 void pinModePLC();

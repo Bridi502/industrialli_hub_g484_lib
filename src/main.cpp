@@ -25,6 +25,7 @@ void loop()
   // digitalInputsPLC.readDigitalInput(6); //le a entrada I06
 
   digitalOutputsPLC.testOutputs();
+  SerialUSB.println("Hello world!");
   bool input1 = digitalInputsPLC.readDigitalInput(1);
   digitalWrite(LED_DEBUG, input1);
 }
