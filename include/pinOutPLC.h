@@ -61,7 +61,7 @@
 
 //############################################################################
 // PinOut PCB I/O
-// Serial 3 - RS485
+// Serial 4 - RS485
 #define	RS485_TER_SEL	PC12
 #define	RS485_UART4_RX	PC11
 #define	RS485_UART4_TX	PC10

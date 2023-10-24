@@ -40,7 +40,9 @@ industrialli_digitalInputs digitalInputsPLC;
 industrialli_digitalOutputs digitalOutputsPLC;
 industrialli_dip dipPLC;
 
-
+// timer para atualizacao dos leds
+TIM_TypeDef *Instance = TIM2;
+HardwareTimer *MyTim = new HardwareTimer(Instance);
 
 class industrialli_startPLC
 {
@@ -48,10 +50,16 @@ private:
     /* data */
 public:
     void begin();
+    static void ledsUpdate()
+    {
+        digitalInputsPLC.updateDigitalInputsLeds();
+        ledsPLC.ledsUpdate();
+    }
 };
 
 void industrialli_startPLC::begin()
 {
+    /************************* Industrialli *************************/
     pinModePLC();
     analogInputsPLC.begin();
     digitalInputsPLC.begin();
@@ -59,11 +67,30 @@ void industrialli_startPLC::begin()
     // dipPLC.begin();
     ledsPLC.begin();
 
+    /************************* Serial *************************/
     SerialUSB.begin(115200);
     Serial1.begin(9600);   // NEXTION
     Serial2.begin(115200); // MOD. EXP.
     Serial3.begin(9600);   // LORA
     Serial4.begin(9600);   // RS485
+
+    /************************* Arduino RS485 *************************/
+
+    // RS485Class RS485(Serial4, RS485_MOD_TXD2, RS485_MOD_RE_DE, LED_DEBUG); //Serial port, TX, DE, RE
+    //  teve conflito com o SerialUSB habilitado, foi necessario modificar RS485.cpp
+    RS485.setPins(RS485_UART4_TX, RS485_UART4_RE_DE, -1);
+    // RS485.setPins(RS485_UART4_TX, RS485_UART4_RE_DE, -1);
+    RS485.begin(9600);
+    // RS485.setDelays(0, 10);
+
+    /************************* Arduino Modbus *************************/
+
+    ModbusRTUClient.begin(115200);
+    ModbusRTUClient.setTimeout(10);
+    /************************* Timers *************************/
+    MyTim->setOverflow(120, HERTZ_FORMAT);
+    MyTim->attachInterrupt(ledsUpdate);
+    MyTim->resume();
 }
 
 #endif
