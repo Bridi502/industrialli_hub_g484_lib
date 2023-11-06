@@ -2,6 +2,13 @@
 
 void industrialli_digitalOutputs::begin()
 {
+        pinMode(ISO_CS, OUTPUT);
+    pinMode(ISO_SCK, OUTPUT);
+    pinMode(ISO_SI, OUTPUT);
+    pinMode(IC1_ISO_DIS, INPUT);
+    pinMode(IC2_ISO_DIS, INPUT);
+    pinMode(IC1_ISO_DIAG, INPUT);
+    pinMode(IC2_ISO_DIAG, INPUT);
 }
 
 void industrialli_digitalOutputs::ledOutput(uint8_t led, uint8_t onOff)
@@ -266,5 +273,26 @@ void industrialli_digitalOutputs::testOutputs()
     for(int i = 16; i > 0; i --){
         writeDigitalOutput(i, LOW);
         delay(100);
+    }
+}
+
+void industrialli_digitalOutputs::isoDiag()
+{
+    if (digitalRead(IC1_ISO_DIAG))
+    {
+        ledsPLC.ledOn(22);
+    }
+
+    else
+    {
+        ledsPLC.ledOff(22);
+    }
+
+    if(digitalRead(IC2_ISO_DIAG)){
+        ledsPLC.ledOn(23);
+    }
+       else
+    {
+        ledsPLC.ledOff(23);
     }
 }

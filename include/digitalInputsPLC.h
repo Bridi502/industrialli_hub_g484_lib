@@ -3,6 +3,9 @@
 #include <Arduino.h>
 #include "ledsPLC.h"
 extern Industrialli_ledsCTRL ledsPLC;
+extern int aState;
+extern int counter;
+extern bool rotation;
 
 // Input dig.
 #define PHOTO_00 PD14
@@ -36,6 +39,18 @@ public:
     {
         noInterrupts();
         _input_00 = !_input_00;
+
+        //encoder
+        aState = _input_00;
+        if( _input_01 != aState){
+            counter++;
+            rotation = true;
+
+        }
+        else{
+            counter--;
+            rotation = false;
+        }
         interrupts();
     }
 

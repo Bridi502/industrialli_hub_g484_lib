@@ -24,6 +24,7 @@ public:
     void writeDigitalOutput(uint8_t Q, bool output);
     void testOutputs();
     void ledOutput(uint8_t led, uint8_t onOff);
+    void isoDiag();
     
 
 private:

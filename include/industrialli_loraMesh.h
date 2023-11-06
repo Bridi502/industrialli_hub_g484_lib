@@ -2,6 +2,7 @@
 #define LoRaMESH_h
 
 #include <Stream.h>
+#include <math.h>
 
 #define MAX_PAYLOAD_SIZE 232
 #define MAX_BUFFER_SIZE 237
@@ -85,6 +86,11 @@ public:
     Stream *SerialLoRa;
     Stream *SerialLoRat;
 
+    //var
+
+      uint8_t _floatVal[4];
+    float _val = 0;
+
     LoRaMESH(Stream *_SerialLoRa, Stream *_SerialLoRat = NULL)
     {
         SerialLoRa = _SerialLoRa;
@@ -116,15 +122,31 @@ public:
         return (crc_calc & 0xFFFF);
     }
 
-    bool write_applicationCommand(uint16_t idNode)
+    bool write_applicationCommand(uint16_t idNode, float val)
     {
         uint16_t _idNode = idNode;
+
+        // byte floatVal[5];
+        _val = val;
+        // itoa(_val, floatVal, 4);
+   for (int i = 0; i < 4; i ++){
+    _floatVal[i] = int(val * pow(10, 4 -i - 1))% 10;
+  }
         uint8_t b = 0;
 
-        bufferPayload[b] = 1;
-        bufferPayload[++b] = 2;
-        bufferPayload[++b] = 3;
-        bufferPayload[++b] = 4;
+        bufferPayload[b] = _floatVal[3];
+        bufferPayload[++b] = _floatVal[2];
+        bufferPayload[++b] = _floatVal[1];
+        bufferPayload[++b] = _floatVal[0];
+  
+
+        /*
+           bufferPayload[b] = 1;
+          bufferPayload[++b] = 2;
+          bufferPayload[++b] = 3;
+          bufferPayload[++b] = 4;
+
+        */
 
         PrepareFrameCommand(_idNode, 0x7F, bufferPayload, b + 1);
         SendPacket();
@@ -147,7 +169,10 @@ public:
                 return num;
             }
         }
-        else return 0;
+    else{
+          // return 0;
+    }
+         
     }
     
 
