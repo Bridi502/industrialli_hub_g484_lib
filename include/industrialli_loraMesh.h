@@ -1,8 +1,7 @@
-#ifndef LoRaMESH_h
-#define LoRaMESH_h
+#ifndef INDUSTRIALLI_LORAMESH_H
+#define INDUSTRIALLI_LORAMESH_H
 
 #include <Stream.h>
-#include <math.h>
 
 #define MAX_PAYLOAD_SIZE 232
 #define MAX_BUFFER_SIZE 237
@@ -65,7 +64,8 @@ public:
         uint8_t size;
         bool command;
     } Frame_Typedef;
-
+    uint8_t _floatVal[4];
+    float _val = 0;
     uint8_t bufferPayload[MAX_PAYLOAD_SIZE] = {0};
     uint8_t payloadSize = 0;
 
@@ -86,10 +86,13 @@ public:
     Stream *SerialLoRa;
     Stream *SerialLoRat;
 
-    //var
-
-      uint8_t _floatVal[4];
-    float _val = 0;
+    //////////
+    float _tempToSend;
+    float _humiToSend;
+    float _tempToReceive;
+    float _humiToReceive;
+    int _function;
+    int _funtionToReceive;
 
     LoRaMESH(Stream *_SerialLoRa, Stream *_SerialLoRat = NULL)
     {
@@ -122,6 +125,138 @@ public:
         return (crc_calc & 0xFFFF);
     }
 
+    //////////////////////////////////////////////////////////////////////////// ENVIA FUNCAO
+    bool write_node_function(uint16_t idNode, int function)
+    {
+        uint16_t _idNode = idNode;
+        _function = function;
+
+        byte functionArray[1] = {
+            ((uint8_t *)&function)[0]};
+        uint8_t b = 0;
+
+        bufferPayload[b] = functionArray[0];
+
+        PrepareFrameCommand(_idNode, 0x7F, bufferPayload, b + 1);
+        SendPacket();
+
+        return true;
+    }
+
+    //////////////////////////////////////////////////////////////////////////// RECEBE FUNCAO
+        int read_function()
+    {
+        if (ReceivePacketCommand(&localId, &command, bufferPayload, &payloadSize, 1000))
+        {
+            if (command == 0x7F)
+            {
+
+                ((uint8_t *)&_funtionToReceive)[0] = bufferPayload[0];
+                return _funtionToReceive;
+            }
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+
+    //////////////////////////////////////////////////////////////////////////// ENVIA TEMPERATURA
+    bool write_node_temp(uint16_t idNode, float temp)
+    {
+        uint16_t _idNode = idNode;
+        _tempToSend = temp;
+
+        byte tempHumiArray[4] = {
+            ((uint8_t *)&_tempToSend)[0],
+            ((uint8_t *)&_tempToSend)[1],
+            ((uint8_t *)&_tempToSend)[2],
+            ((uint8_t *)&_tempToSend)[3]};
+
+        uint8_t b = 0;
+
+        bufferPayload[b] = tempHumiArray[0];
+        bufferPayload[++b] = tempHumiArray[1];
+        bufferPayload[++b] = tempHumiArray[2];
+        bufferPayload[++b] = tempHumiArray[3];
+
+        PrepareFrameCommand(_idNode, 0x7F, bufferPayload, b + 1);
+        SendPacket();
+
+        return true;
+    }
+
+    //////////////////////////////////////////////////////////////////////////// ENVIA UMIDADE
+    bool write_node_humi(uint16_t idNode, float humi)
+    {
+        uint16_t _idNode = idNode;
+
+        _humiToSend = humi;
+
+        byte tempHumiArray[4] = {
+
+            ((uint8_t *)&_humiToSend)[0],
+            ((uint8_t *)&_humiToSend)[1],
+            ((uint8_t *)&_humiToSend)[2],
+            ((uint8_t *)&_humiToSend)[3]};
+
+        uint8_t b = 0;
+
+        bufferPayload[b] = tempHumiArray[0];
+        bufferPayload[++b] = tempHumiArray[1];
+        bufferPayload[++b] = tempHumiArray[2];
+        bufferPayload[++b] = tempHumiArray[3];
+
+        PrepareFrameCommand(_idNode, 0x7F, bufferPayload, b + 1);
+        SendPacket();
+
+        return true;
+    }
+
+    /////////////////////////////////////////////////////// RECEBE TEMPERATURA
+    float read_NodeTemp()
+    {
+        if (ReceivePacketCommand(&localId, &command, bufferPayload, &payloadSize, 1000))
+        {
+            if (command == 0x7F)
+            {
+
+                ((uint8_t *)&_tempToReceive)[0] = bufferPayload[0];
+                ((uint8_t *)&_tempToReceive)[1] = bufferPayload[1];
+                ((uint8_t *)&_tempToReceive)[2] = bufferPayload[2];
+                ((uint8_t *)&_tempToReceive)[3] = bufferPayload[3];
+                return _tempToReceive;
+            }
+        }
+        else
+        {
+            return 0.00;
+        }
+    }
+
+    /////////////////////////////////////////////////////// RECEBE UMIDADE
+    float read_NodeHumi()
+    {
+        if (ReceivePacketCommand(&localId, &command, bufferPayload, &payloadSize, 1000))
+        {
+            if (command == 0x7F)
+            {
+                ((uint8_t *)&_humiToReceive)[0] = bufferPayload[0];
+                ((uint8_t *)&_humiToReceive)[1] = bufferPayload[1];
+                ((uint8_t *)&_humiToReceive)[2] = bufferPayload[2];
+                ((uint8_t *)&_humiToReceive)[3] = bufferPayload[3];
+                return _humiToReceive;
+            }
+        }
+        else
+        {
+            return 0.00;
+        }
+    }
+
+    ///////////////////////////////////////////////////////
+
     bool write_applicationCommand(uint16_t idNode, float val)
     {
         uint16_t _idNode = idNode;
@@ -129,16 +264,16 @@ public:
         // byte floatVal[5];
         _val = val;
         // itoa(_val, floatVal, 4);
-   for (int i = 0; i < 4; i ++){
-    _floatVal[i] = int(val * pow(10, 4 -i - 1))% 10;
-  }
+        for (int i = 0; i < 4; i++)
+        {
+            _floatVal[i] = int(val * pow(10, 4 - i - 1)) % 10;
+        }
         uint8_t b = 0;
 
         bufferPayload[b] = _floatVal[3];
         bufferPayload[++b] = _floatVal[2];
         bufferPayload[++b] = _floatVal[1];
         bufferPayload[++b] = _floatVal[0];
-  
 
         /*
            bufferPayload[b] = 1;
@@ -169,12 +304,11 @@ public:
                 return num;
             }
         }
-    else{
-          // return 0;
+        else
+        {
+            // return 0;
+        }
     }
-         
-    }
-    
 
     bool PrepareFrameCommand(uint16_t id, uint8_t command, uint8_t *payload, uint8_t payloadSize)
     {
@@ -182,7 +316,7 @@ public:
             return false;
         if (command < 0)
             return false;
-        if (payload < 0)
+        if (payload < (uint8_t *)0)
             return false;
         if (payloadSize < 0)
             return false;
@@ -284,13 +418,13 @@ public:
         uint8_t i = 0;
         uint16_t crc = 0;
 
-        if (id < 0x00)
+        if (id < (uint16_t *)0x00)
             return false;
-        if (command < 0x00)
+        if (command < (uint8_t *)0x00)
             return false;
-        if (payload < 0x00)
+        if (payload < (uint8_t *)0x00)
             return false;
-        if (payloadSize < 0x00)
+        if (payloadSize < (uint8_t *)0x00)
             return false;
 
         while (((timeout > 0) || (i > 0)) && (waitNextByte > 0))
@@ -312,8 +446,8 @@ public:
 
         if (i > 0)
         {
-            Serial.print("RX: ");
-            printHex(frame.buffer, i);
+             //Serial1.print("RX: ");
+            //printHex(frame.buffer, i);
         }
 
         if ((timeout == 0) && (i == 0))

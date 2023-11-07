@@ -11,6 +11,7 @@ int aLastState;
 int counter;
 int stepperDir;
 bool rotation;
+int nextionPage = 0;
 
 bool relayOn = false;
 
@@ -19,6 +20,12 @@ float pressureSensor010Bar;
 float tempSensor0150C;
 int valPgs_press020;
 int valPgs_temp020;
+float nodeTemp1Raw;
+float nodeHumi1Raw;
+float nodeTemp1;
+float nodeHumi1;
+int pgs_nodeTemp1;
+int pgs_nodeHumi1;
 
 industrialli_startPLC startPLC;
 
@@ -34,23 +41,24 @@ void setup()
   // NEXTION
   nexInit();
   driverEncoder.attachPush(driverEncoderPushCallBack, &driverEncoder);
-  startDriver.attachPush(startDriverPushCallBack, &startDriver);
-  stopDriver.attachPush(stopDriverPushCallBack, &stopDriver);
   sensors020.attachPush(sensors020PushCallBack, &sensors020);
   nodesLora.attachPush(nodesLoraPushCallBack, &nodesLora);
+  mod_exp.attachPush(modExpPushCallBack, &mod_exp);
+   ativar.attachPush(ativarPushCallBack, &ativar);
+    desativar.attachPush(desativarPushCallBack, &desativar);
+  startDriver.attachPush(startDriverPushCallBack, &startDriver);
+  stopDriver.attachPush(stopDriverPushCallBack, &stopDriver);
+
   menu.attachPush(menuPushCallBack, &menu);
-  voltar.attachPush(voltarPushCallBack, &voltar);
+  menu3.attachPush(menuPushCallBack, &menu3);
   m0_0.attachPush(m0_0PushCallBack, &m0_0);
   m0_4.attachPush(m0_4PushCallBack, &m0_4);
   m0_5.attachPush(m0_5PushCallBack, &m0_5);
-  m1_5.attachPush(m1_5PushCallBack, &m1_5);
-  m0_6.attachPush(m0_6PushCallBack, &m0_6);
+ 
 
   digitalWrite(IC1_ISO_DIS, HIGH);
   digitalWrite(IC2_ISO_DIS, HIGH);
   aLastState = digitalInputsPLC.readDigitalInput(1);
-
-  
 
   analogInputsPLC.setReadMode(ANLG_IN01, READ_020); // seta a entrada A01 para leitura de sensores de 0-20mA
   analogInputsPLC.setReadMode(ANLG_IN02, READ_020); // seta a entrada A02 para leitura de sensores de 0-10V
@@ -93,11 +101,25 @@ void loop()
   nexLoop(nex_listen_list);
   if (sendMsgNextion == true)
   {
-    pulsos.setValue(counter);
-    temp020.setValue(tempSensor0150C);
-    press020.setValue(pressureSensor010Bar);
-    pgs_temp020.setValue(valPgs_temp020);
-    pgs_press020.setValue(valPgs_press020);
+    switch (nextionPage)
+    {
+    case 4:
+      temp020.setValue(tempSensor0150C);
+      press020.setValue(pressureSensor010Bar);
+      pgs_temp020.setValue(valPgs_temp020);
+      pgs_press020.setValue(valPgs_press020);
+      break;
+
+    case 5:
+      tempNode1.setValue(nodeTemp1);
+      umiNode1.setValue(nodeHumi1);
+      pgs_tempNode1.setValue(pgs_nodeTemp1);
+      pgs_humiNode1.setValue(pgs_nodeHumi1);
+      break;
+
+    default:
+      break;
+    }
     sendMsgNextion = false;
   }
   //
@@ -118,13 +140,26 @@ void loop()
   float pressureSensor020Raw = analogInputsPLC.get020mA(ANLG_IN01);
   pressureSensor010Bar = (((pressureSensor020Raw - 3.80) * 10.00 / (20.00 - 3.80)) + 1.00) * 100;
   float tempSensor020Raw = analogInputsPLC.get020mA(ANLG_IN02);
-  tempSensor0150C = (((tempSensor020Raw - 4.00)  / (20.00 - 4.00)) * (200.00 - 0.00) + 0.00) * 100;
+  tempSensor0150C = (((tempSensor020Raw - 4.00) / (20.00 - 4.00)) * (200.00 - 0.00) + 0.00) * 100;
 
   valPgs_press020 = map(pressureSensor020Raw, 0.00, 20.00, 0, 100);
   valPgs_temp020 = map(tempSensor020Raw, 0.00, 20.00, 0, 100);
- SerialUSB.println(tempSensor0150C);
 
+  if (sendNow)
+  {
+    lora.write_node_function(1, 3);
+    nodeTemp1Raw = lora.read_NodeTemp();
+    nodeTemp1 = nodeTemp1Raw * 100;
+    pgs_nodeTemp1 = map(nodeTemp1Raw, 0.00, 100.00, 0, 100);
+  }
+  else
+  {
 
+    lora.write_node_function(1, 4);
+    nodeHumi1Raw = lora.read_NodeHumi();
+    nodeHumi1 = nodeHumi1Raw * 100;
+    pgs_nodeHumi1 = map(nodeHumi1Raw, 0.00, 100.00, 0, 100);
+  }
 
   /*
           float val020 = nodeVal / 1000.00;
